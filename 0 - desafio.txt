@@ -1,0 +1,228 @@
+-sobre el proyecto anterior agregar funciones y persistencia
+
+cuando se elimina un ID el mismo queda vacío en lo que es la
+aplicación y, salvo aviso, no hay un reemplazo del mismo. No 
+es que se debe agregar nuevamente en el mismo ID borrado
+
+lo que haremos ahora es una persistencia en memoria en un txt
+a futuro se realizará en una base de datos mas consistente
+
+
+empezamos
+1- importamos promesas fs y puede ser utilizado de forma
+sincrónica o de forma asincrónica
+*dado el desafío es recomendable que sea sincrónica
+
+    import { promises as fs } from "fs";
+
+2- hacemos una constante getProduct que consultará los
+productos que tendrá el txt o json (creamos productos.json)
+
+para consultar el array vacío se debe hacer una constante
+prods que sea igual a fs.readFile
+
+también debemos crear una constante path que contendrá la
+ruta para encontrar ese .json
+
+    const path = "./productos.json";
+    const getProducts = () => {
+        const prods = fs.readFile(path, "utf-8");
+    };
+
+3- cada vez que se consulte el json se deberá escribir
+
+*stringify - de objeto a json 
+*parse - para pasar de json a objeto
+
+cada vez que utilizo promesas y estoy dentro de una función
+asincrónica hay que definir el await. Siempre se debe escribir
+para los métodos de trabajo con archivo el await
+
+así quedaría todo el código que consultaría el array tipeando
+node main.js en consola (previamente creando el package.json
+que deberá contener "type":"module")
+
+    import { promises as fs } from "fs";
+
+    const path = "./productos.json";
+    const getProducts = async () => {
+        const prods = JSON.parse(await fs.readFile(path, "utf-8"));
+        console.log(prods);
+    };
+
+    getProducts();
+
+y nos devolverá el array vacío. Funcionó. Éxito
+
+4- ahora hacemos el getProductById, que sería el siguiente
+método de consulta y recibirá un ID como parámetro y consultará
+por un solo producto dado su ID
+
+la lógica es simiar, se consulta ese array de productos que se
+consultará siempre y luego los métodos de consulta
+
+consulto prods, luego se crea una constante prod que consultará
+a prods conn un .find
+
+    const producto = prods.find((prod) => prod.id === id);
+
+luego se hace un if que indicará que si existe ese producto, lo
+que deberá hacer es console.log de producto. Mientras que si no
+existe haga un console.log de 'producto no encontrado'
+
+entonces recibe un ID y mediante ese ID consulta si existe en el
+archivo json y así quedaría el código
+
+    const getProductsById = async (id) => {
+        const prods = JSON.parse(await fs.readFile(path, "utf-8"));
+        const producto = prods.find((prod) => prod.id === id);
+
+        if (producto) console.log(producto);
+        else console.log("Producto no encontrado");
+    };
+
+así corroboramos que éste método funciona
+
+    getProductsById(1);
+
+(para probarlo creamos algo en el json aunque debería de ser
+con un método)
+
+5- creamos una clase de ProductManager y para generar métodos
+asincrónicos, debajo del constructor, debe ponerse la palabra
+reservada async y getProduct()
+esta es la manera en la qué declarar que va a ser asincrónico
+dentro de una clase
+
+6- método para crear productos. addProducts será una constante
+asincrónica donde pedirá un producto a agregar (product) y el
+desafío dice que si existe lo agrege si no existe, que diga que
+no si éste existe
+entonces es la misma lógica porque debe recorrer todo el array
+para averiguar si existe, avisándonos si lo hace en el if
+mientras que debe realizar un .push si no existe
+
+    const addProduct = async (product) => {
+        const prods = JSON.parse(await fs.readFile(path, "utf-8"));
+        const producto = prods.find((prod) => prod.id === product.id);
+
+        if (producto) {
+            //consulta si el producto existe
+            console.log("Producto ya agregado");
+        } else {
+            prods.push(producto);
+        }
+    };
+
+ahora como el else funcionó y el producto se agregará, se debe
+modificar el array del .json por lo que seguiremos en el else
+
+    else {
+        prods.push(product);
+        //para modificar un array se debe pisar el anterior contenido
+        await fs.writeFile(path, JSON.stringify(prods));
+    }
+
+para consultar si funciona debemos realizar un addProduct, haciéndolo
+así por ejemplo
+
+    const producto1 = {id:1, nombre:"Fideos"}
+    const product2 = { id: 2, nombre: "Fideos" };
+    const product3 = { id: 3, nombre: "Garbanzos" };
+    addProduct(producto1)
+
+7- método para actualizar productos. El updateProduct pide 2 cosas el
+id para consultar y el cuerpo product para modificar, modificando a
+través de todo el objeto. Luego sí se podrá modificar 1 o 2 atributos
+sin tener que cambiar todo el objeto completo
+
+se deberá hacer lo mismo que hace getProductById, pero actualizando el
+producto. Lo consulto, si existe lo modifico y si no dirá "producto no
+encontrado"
+
+con el .find devuelve el objeto completo, pero no me interesa el objeto
+sino que me interesa la posición. Se usará entonces el método .findIndex
+que devuelve el índice del objeto
+
+    const updateProduct = async (id) => {
+        const prods = JSON.parse(await fs.readFile(path, "utf-8"));
+        const indice = prods.findIndex((prod) => prod.id === id);
+
+        if (indice) console.log(indice);
+        else console.log("Producto no encontrado");
+    };
+
+qué devuelve el índice si el objeto no existe? -1 porque no existe o no
+es lógico generarlo. Por lo que se dirá que si es distinto a ' -1 '
+modificará los atributos que tenga el objeto
+Haciéndolo de la siguiente manera, con prods en la posición de índice
+.nombre y se agregará el nuevo nombre que llega por parámetro
+
+    const updateProduct = async (id) => {
+        const prods = JSON.parse(await fs.readFile(path, "utf-8"));
+        const indice = prods.findIndex((prod) => prod.id === id);
+
+        if (indice != -1) {
+            //acá se cambia la propiedad y debe repetirse
+            prods[indice].nombre = product.nombre;
+            //para luego poner la superposición
+            await fs.writeFile(path, JSON.stringify(prods));
+        } else {
+            console.log("Producto no encontrado");
+        }
+    };
+
+// se debe hacer referencia a la posición y el id es distinto a la 
+posición que el objeto tenga en el array
+
+Prueba para ver que funciona
+    
+    updateProduct(1, { nombre: "Pan" });
+
+Prueba para ver que funciona con un id que no existe
+
+    updateProduct(5, { nombre: "Lactal" });
+
+Funciona perfectamente
+
+8- deleteProduct que solicitará el id haciendo lo mismo de consultar
+un elemento dado su id, devolviendo lo que sería id y si existe lo
+eliminará
+
+    const deleteProduct = async (id) => {
+        const prods = JSON.parse(await fs.readFile(path, "utf-8"));
+        const producto = prods.find((prod) => prod.id === id);
+
+        if (producto) {
+        } else {
+            console.log("Producto no encontrado");
+        }
+    };
+
+ahora, cómo hacemos para que elimine un producto?
+utilizamos await fs.writeFile y usamos prods.filter enviando el
+resultado del filter, pidiéndole que nos devuelva el array modificado
+cuyo id sea distinto del id ingresado
+Traeme un array de productos con todos los elementos excepto el que
+sea igual a cuyo id envié
+sé que ese producto existe y ahora quiero que lo elimine
+
+    if (producto) {
+        await fs.writeFile(
+        path,
+        JSON.stringify(prods.filter((prod) => prod.id != id))
+        );
+    }
+
+así es cómo comprobamos y funciona
+
+    deleteProduct(1);
+
+//GITHUB
+
+git init
+git add .
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/fedeluchelli/afterclass2.8.git
+git push -u origin main
